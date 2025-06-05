@@ -1,0 +1,18 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+
+
+# data folder
+data_folder
+# result folder
+result
+# Java binary files
+*.class
+*.jar
+*.war
+*.ear
+*.nar
