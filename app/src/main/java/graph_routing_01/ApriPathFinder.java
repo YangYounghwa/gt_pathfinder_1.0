@@ -108,6 +108,8 @@ public class ApriPathFinder {
     /**
      * receives coordinate in EPSG a.k.a WGS84
      * transforms them into EPSG:5179 then returns ApriPath
+     * multiple findPath methods can be called at the same time.
+     * Shared memory are not modified. (ApriGraph)
      * @param stLon start longitude
      * @param stLat start latitude
      * @param endLon end longitude
@@ -121,7 +123,7 @@ public class ApriPathFinder {
     public ApriPath findPath(double stLon, double stLat, double endLon, double endLat,double startTime,Boolean timeCheck,int dayType) throws ApriException {
         if (apGraph == null) {
             System.err.println("GraphView must be built in advance.");
-            throw new ApriException("", null);
+            throw new ApriException("GraphView not constructed", null);
         }
         GraphView graphView = new GraphView(this.apGraph);
 
