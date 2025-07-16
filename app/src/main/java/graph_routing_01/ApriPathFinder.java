@@ -54,6 +54,12 @@ import org.locationtech.jts.linearref.LengthIndexedLine;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
+import graph_routing_01.exceptions.ApriException;
+import graph_routing_01.model.ApriEdge;
+import graph_routing_01.model.ApriGraph;
+import graph_routing_01.model.ApriNode;
+import graph_routing_01.model.ApriPath;
+
 public class ApriPathFinder {
     private String ROADNAME_SHP = "RN";
     private String ROADCODE_SHP = "RN_CD";

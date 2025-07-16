@@ -1,5 +1,6 @@
 package graph_routing_01;
 
+import graph_routing_01.model.ApriNode;
 
 /**
  *  PathState used for priority queue in Dijkstra's shortest path search.

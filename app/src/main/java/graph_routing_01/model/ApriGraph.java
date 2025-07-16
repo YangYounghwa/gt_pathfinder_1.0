@@ -1,4 +1,4 @@
-package graph_routing_01;
+package graph_routing_01.model;
 
 import java.util.Collection;
 import java.util.HashMap;

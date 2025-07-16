@@ -12,6 +12,11 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
 
+import graph_routing_01.exceptions.ApriException;
+import graph_routing_01.model.ApriEdge;
+import graph_routing_01.model.ApriGraph;
+import graph_routing_01.model.ApriNode;
+
 public class GraphView {
     private final ApriGraph baseGraph;
     private final Map<String, ApriNode> virtualNodes = new HashMap<>();
