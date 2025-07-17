@@ -8,11 +8,11 @@ import java.util.Map;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
+// import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.index.quadtree.Quadtree;
-import org.locationtech.jts.index.strtree.STRtree;
+// import org.locationtech.jts.index.strtree.STRtree;
 
 
 
@@ -96,6 +96,7 @@ public class ApriGraph {
     public ApriEdge findNearestEdge(Coordinate coord, double radius) {
         Envelope searchEnv = new Envelope(coord);
         searchEnv.expandBy(radius);
+        @SuppressWarnings("unchecked")
         List<Object> candidateEdges = edgeSpatialIndex.query(searchEnv);
         GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
         Point point = geometryFactory.createPoint(coord);
@@ -105,7 +106,7 @@ public class ApriGraph {
         for (Object edgeO : candidateEdges) {
             ApriEdge edge = (ApriEdge) edgeO;
             double distance = edge.geometry.distance(point);
-            if (distance < minDistance) {
+            if (distance < minDistance || edge.edgeType.equals("road")) {
                 minDistance = distance;
                 nearestEdge = edge;
             }

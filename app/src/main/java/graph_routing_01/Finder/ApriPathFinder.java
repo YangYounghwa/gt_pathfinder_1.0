@@ -1,4 +1,4 @@
-package graph_routing_01;
+package graph_routing_01.Finder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,22 +55,31 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
 import graph_routing_01.exceptions.ApriException;
+import graph_routing_01.exceptions.ApriPathExLibError;
+import graph_routing_01.exceptions.ResException;
 import graph_routing_01.model.ApriEdge;
 import graph_routing_01.model.ApriGraph;
 import graph_routing_01.model.ApriNode;
 import graph_routing_01.model.ApriPath;
+import graph_routing_01.model.BusTimeTable;
+import graph_routing_01.model.GraphView;
+import graph_routing_01.model.PathState;
 
 public class ApriPathFinder {
     private String ROADNAME_SHP = "RN";
     private String ROADCODE_SHP = "RN_CD";
     private ApriGraph apGraph = null;
-    private List<ApriNode> csvNodes = new ArrayList<>();
+    
 
     private long projCount = 0;
     private long busStopCount = 0;
-    
+   
+    private BusTimeTable busTimeTable = BusTimeTable.getInstance();
 
-    ApriPathFinder() {
+        // check if the bus stop node is already added.
+    private Map<Long, Boolean> busstopIdMap = new HashMap<>();
+
+    public ApriPathFinder() {
 
     }
 
@@ -96,8 +105,12 @@ public class ApriPathFinder {
         }
     }
 
+    public void initBusTimeTable(File file) {
+        this.busTimeTable.loadBusTimeTable(file);
+    }
+
     /**
-     * receives coordinate in EPSG a.k.a WGS84
+     * receives coordinate in EPSG:4326 a.k.a WGS84
      * transforms them into EPSG:5179 then returns ApriPath
      * @param stLon start longitude
      * @param stLat start latitude
@@ -112,7 +125,7 @@ public class ApriPathFinder {
     }
 
     /**
-     * receives coordinate in EPSG a.k.a WGS84
+     * receives coordinate in EPSG:4326 a.k.a WGS84
      * transforms them into EPSG:5179 then returns ApriPath
      * multiple findPath methods can be called at the same time.
      * Shared memory are not modified. (ApriGraph)
@@ -269,7 +282,7 @@ public class ApriPathFinder {
         return path;
     }
 
-    public void pathToShp(ApriPath path, String filename) throws ApriException {
+    public void pathToShp(ApriPath path, String filename) throws ApriException, ApriPathExLibError {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
 
         typeBuilder.setName("LineFeature");
@@ -278,10 +291,11 @@ public class ApriPathFinder {
 
             crsSave = CRS.decode("EPSG:5179");
         } catch (NoSuchAuthorityCodeException e) {
-            e.printStackTrace();
+            e.printStackTrace(); 
+            throw new ApriPathExLibError(filename + " No such authority code", e);
         } catch (FactoryException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            throw new ApriPathExLibError(filename + " FactoryException", e);
         }
         typeBuilder.setCRS(crsSave);
         typeBuilder.add("the_geom", LineString.class);
@@ -302,7 +316,7 @@ public class ApriPathFinder {
         SimpleFeatureCollection finalCollection = (SimpleFeatureCollection) featureCollection;
         File outFile = new File(filename);
         try{
-            this.writeShapefile(finalCollection, outFile);
+            this.writeSFCShapefile(finalCollection, outFile);
         }
         catch (IOException | ApriException e){
 
@@ -310,7 +324,7 @@ public class ApriPathFinder {
         }
     }
 
-    private void writeShapefile(SimpleFeatureCollection featureCollection, File outputFile) throws ApriException, IOException {
+    private void writeSFCShapefile(SimpleFeatureCollection featureCollection, File outputFile) throws ApriException, IOException {
         ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
         Map<String, Serializable> params = new HashMap<>();
         params.put("url", outputFile.toURI().toURL());
@@ -329,7 +343,7 @@ public class ApriPathFinder {
                 }
             }
             transaction.commit();
-        } catch (Exception e) {
+        } catch (IOException e) {
             transaction.rollback();
             throw new ApriException("File save failed", e);
         } finally {
@@ -337,7 +351,7 @@ public class ApriPathFinder {
         }
     }
 
-    public void buildBaseGraph(SimpleFeatureCollection collection) throws ApriException {
+    public void buildBaseGraph(SimpleFeatureCollection collection) throws ApriException, ResException {
 
         LineStringGraphGenerator lineGen = new LineStringGraphGenerator();
         FeatureGraphGenerator fGraphGen = new FeatureGraphGenerator(lineGen);
@@ -374,8 +388,8 @@ public class ApriPathFinder {
             Edge gtEdge = (Edge) obj;
             Node nodeA = gtEdge.getNodeA();
             Node nodeB = gtEdge.getNodeB();
-            Coordinate coordA = (Coordinate) ((Point) nodeA.getObject()).getCoordinate();
-            Coordinate coordB = (Coordinate) ((Point) nodeB.getObject()).getCoordinate();
+            // Coordinate coordA = (Coordinate) ((Point) nodeA.getObject()).getCoordinate();
+            // Coordinate coordB = (Coordinate) ((Point) nodeB.getObject()).getCoordinate();
 
             String keyA = "N" + nodeA.getID();
             String keyB = "N" + nodeB.getID();
@@ -385,6 +399,9 @@ public class ApriPathFinder {
             SimpleFeature feature = edgeFeatureMap.get(gtEdge);
             String RN = (String) feature.getAttribute(ROADNAME_SHP);
             String GN = (String) feature.getAttribute(ROADCODE_SHP);
+            if(GN == null || GN.isEmpty()) {
+                GN = "temp"+ gtEdge.getID();
+            }
 
             Object objLS = gtEdge.getObject();
             SimpleFeature featLS = (SimpleFeature) objLS;
@@ -397,7 +414,7 @@ public class ApriPathFinder {
             } else if (geometryObj instanceof MultiLineString) {
                 MultiLineString multiLine = (MultiLineString) geometryObj;
                 if (multiLine.getNumGeometries() > 1)
-                    throw new ApriException(
+                    throw new ResException(
                             "The base SHP file must have one single LineString in each of MultiLineString", null);
                 for (int i = 0; i < multiLine.getNumGeometries(); i++) {
                     LineString line = (LineString) multiLine.getGeometryN(i);
@@ -410,7 +427,7 @@ public class ApriPathFinder {
             } else if (geometryObj == null) {
                 // PASS, A row can be empty?
             } else {
-                throw new ApriException("The SHP file must consist of LineString or MultiLineString", null);
+                throw new ResException("The SHP file must have LineString or MultiLineString", null);
                 // should raise error at this point?
             }
             ApriEdge customEdge1 = new ApriEdge("Ea" + gtEdge.getID(), sourceNode, targetNode, geometry, "road", RN,
@@ -430,12 +447,163 @@ public class ApriPathFinder {
         // Save to memory.
         this.apGraph = customGraph;
 
+        // Debugging information
+        System.out.println("GraphView built with " + this.apGraph.getNodes().size() + " nodes and "
+                + this.apGraph.getEdges().size() + " edges.");
+
     }
-    public void addCsvNodes(String filename) throws ApriException{
+
+
+
+    public void addBusRouteEdges(String filename) throws ApriException, ResException {
         File file = new File(filename);
-        addCsvNodes(file,null,true);
+        addBusRouteEdges(file, null, true);
+    }   
+
+    public void addBusRouteEdges(File file, String charSet, Boolean isHeadered) throws ApriException, ResException {
+        List<ApriEdge> csvEdges = new ArrayList<>();
+        // Adjusted for "bus_route.csv"
+        if (this.apGraph == null) {
+            System.err.println("GraphView must be built in advance.");
+            throw new ApriException("GraphView not constructed", null);
+        }
+
+        if (charSet == null) {
+            charSet = "UTF-8";
+        }
+        try {
+            Reader reader = new InputStreamReader(new FileInputStream(file), charSet);
+            CSVReader csvReader = new CSVReader(reader);
+            String[] header;
+            if (isHeadered)
+                header = csvReader.readNext();
+            String[] record;
+            //routeID, route#, stopID, stopType, direction, small_interval, BSOrder,interval, extra,extra2
+            //routeID :0, stopID:2, direction:4,BSOrder:6,interval:7
+
+            String routeIdPrior = null;
+            String stopIdPrior = null;
+            String directionPrior = null;
+            String bsOrderPrior = null;
+            String intervalPrior = null;   
+            
+            
+            while ((record = csvReader.readNext()) != null) {
+
+
+                String routeId = record[0].trim(); // routeID
+                String stopId = record[2].trim(); // stopID
+                String direction = record[4].trim(); // direction
+                String bsOrder = record[6].trim(); // BSOrder
+                String interval = record[7].trim(); // interval
+
+
+                if(routeIdPrior != null) {
+                    if(routeId.equals(routeIdPrior) && direction.equals(directionPrior)) {
+                        // only add edges if the routeId and direction are same as previous.
+                        if(busstopIdMap.containsKey(Long.valueOf(routeId)) && busstopIdMap.get(Long.valueOf(routeId))) {
+                            // Only add edges if the busstop data exists.
+                            ApriNode startNode = this.apGraph.getNodeById("B" + stopIdPrior);
+                            ApriNode endNode = this.apGraph.getNodeById("B" + stopId);    
+                            if (startNode == null || endNode == null) {
+                                // System.err.println("Bus stop node not found for route: " + routeId + ", stop: " + stopId);
+                                continue;
+                            }
+                            //new ApriEdge(id,source,target,geometry,edgeType,edgeTrackName,govRoadId);
+                            
+                            // edgeType is "BUS"
+                            // edgeTrackName is name of the routeID 
+                            String edgeTrackName = busTimeTable.getBusName(Long.valueOf(routeId));
+
+                            GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+                            LineString busLine = geometryFactory.createLineString(new Coordinate[] {
+                                startNode.coord,
+                                endNode.coord
+                            });
+
+                            Double busTime = busLine.getLength() / 4.7; //  17Km/h = 4.7 m/s
+
+
+                            ApriEdge edge1 = new ApriEdge("Eb" + routeId + "_" + stopId, startNode, endNode, busLine, "BUS", edgeTrackName, routeId,busTime);
+                            ApriEdge edge2 = new ApriEdge("Ea" + routeId + "_" + stopId, endNode, startNode, busLine.reverse(), "BUS", edgeTrackName, routeId,busTime);
+                            this.apGraph.addEdge(edge1);
+                            this.apGraph.addEdge(edge2);
+                            startNode.addStartEdge(edge1);
+                            endNode.addEndEdge(edge1);
+                            endNode.addStartEdge(edge2);
+                            startNode.addEndEdge(edge2);
+
+
+                        }
+                    }
+            
+                }
+
+                
+                routeIdPrior = routeId;
+                stopIdPrior = stopId;      
+                directionPrior = direction;
+                bsOrderPrior = bsOrder;
+                intervalPrior = interval;
+            
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("CSV file not Found.");
+            throw new ResException("CSV file now found in ApriPathFinder.addCsvNodes()", e);
+        } catch (CsvValidationException e) {
+            System.err.println("Check csv format.");
+            e.printStackTrace();
+            throw new ResException("Check csv format", e);
+
+        } catch (NumberFormatException e) {
+            System.err.println("CSV have wrong coordinate format.");
+            e.printStackTrace();
+            throw new ResException("Check number doubles in csv.", e);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new ApriException("Error while opening the file, ApriPathFinder.addCsvNodes()", e);
+        }
+        
+    
     }
-    public void addCsvNodes(File file, String charSet, Boolean isHeadered) throws ApriException {
+
+
+    public void addBusstopNodes(String filename) throws ApriException, ResException{
+        File file = new File(filename);
+        addBusstopNodes(file,null,true);
+    }
+
+
+
+    
+    
+
+    /**
+     * Add bus stop nodes from a CSV file.
+     * The CSV file should have the following columns:
+     * 0: BS_ID (Bus Stop Node ID)
+     * 1: BS_NM (Bus Stop code)
+     * 2: BS_NAME (Bus Stop names)
+     * 3: posX (longitude)
+     * 4: posY (latitude)
+     * 
+     * @param file the CSV file containing bus stop data
+     * @param charSet character set of the CSV file, default is UTF-8
+     * @param isHeadered true if the CSV file has a header row, false otherwise
+     * @throws ApriException if there is an error in processing
+     * @throws ResException if there is an error in reading the resource
+     */
+    public void addBusstopNodes(File file, String charSet, Boolean isHeadered) throws ApriException, ResException {
+
+        List<ApriNode> csvNodes = new ArrayList<>();
+        // Adjusted for "busstop_location.csv"
+        if (this.apGraph == null) {
+            System.err.println("GraphView must be built in advance.");
+            throw new ApriException("GraphView not constructed", null);
+        }
+
+        
         if (charSet == null) {
             charSet = "UTF-8";
         }
@@ -448,29 +616,43 @@ public class ApriPathFinder {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
 
-                String s1 = record[0].trim();// name : Bus Stop names
+                String s1 = record[2].trim();// name : Bus Stop names
                 String s2 = record[1].trim();// BS_NM : Bus Stop code
-                String s3 = record[2].trim();// BS_ID : Bus Stop Node ID
+                String s3 = record[0].trim();// BS_ID : Bus Stop Node ID
                 double posX = Double.parseDouble(record[3].trim());
                 double posY = Double.parseDouble(record[4].trim());
-                // Beaware that (posY, posX) in the coordinate system.
-                Coordinate coord = new Coordinate(posY, posX);
+                Coordinate coord = new Coordinate(posX, posY);
+                try{
+                CoordinateReferenceSystem srcCRS = CRS.decode("EPSG:5181", true);
+                CoordinateReferenceSystem destCRS = CRS.decode("EPSG:5179", true);
+                MathTransform transform = CRS.findMathTransform(srcCRS, destCRS, true);
+                Coordinate transformedCoord = JTS.transform(coord, null, transform);
+                coord = transformedCoord;
+                } catch (FactoryException | TransformException e) {
+                    System.err.println("Coordinate transformation failed for bus stop: " + s3);
+                    e.printStackTrace();
+                    throw new ApriException("Coordinate transformation failed for bus stop: " + s3, e);
+                }
+
+
+                
                 // "B"+s3,coord, name, "BS",BS_ID,BS_NM
                 ApriNode bsNode = new ApriNode("B" + s3, coord, s1, "BS", s3, s2);
                 csvNodes.add(bsNode);
+                busstopIdMap.put(Long.valueOf(s3),true);
             }
         } catch (FileNotFoundException e) {
             System.err.println("CSV file not Found.");
-            throw new ApriException("CSV file now found in ApriPathFinder.addCsvNodes()", e);
+            throw new ResException("CSV file now found in ApriPathFinder.addCsvNodes()", e);
         } catch (CsvValidationException e) {
             System.err.println("Check csv format.");
             e.printStackTrace();
-            throw new ApriException("Check csv format", e);
+            throw new ResException("Check csv format", e);
 
         } catch (NumberFormatException e) {
             System.err.println("CSV have wrong coordinate format.");
             e.printStackTrace();
-            throw new ApriException("Check number doubles in csv.", e);
+            throw new ResException("Check number doubles in csv.", e);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -478,17 +660,33 @@ public class ApriPathFinder {
         }
 
         for (ApriNode csvNode : csvNodes) {
-            ApriEdge nearestEdge1 = this.apGraph.findNearestEdge(csvNode.coord);
+            ApriEdge nearestEdge1 = this.apGraph.findNearestEdge(csvNode.coord,100);
 
             if (nearestEdge1 != null) {
+                // If there is a close edge, add a new node and edges.
+
+                // System.out.println("Adding bus stop node: " + csvNode.id + " at " + csvNode.coord   
+                //         + " near edge: " + nearestEdge1.id );
                 ApriNode nodeA = nearestEdge1.source;
                 ApriNode nodeB = nearestEdge1.target;
                 this.apGraph.removeEdge(nearestEdge1);
+                String gId = new String(nearestEdge1.govRoadId);
+
+                // Remove the edge from both nodes.
+
                 for (ApriEdge edge : nodeA.endEdges) {
-                    if (edge.target == nodeB & edge.govRoadId.equals(nearestEdge1.govRoadId)) {
+                    if (edge.target == nodeB & edge.govRoadId.equals(gId)) {
                         this.apGraph.removeEdge(edge);
                     }
                 }
+
+                // Same thing. No need to check both directions.
+                // for (ApriEdge edge : nodeB.startEdges) {
+                //     if (edge.source == nodeA & edge.govRoadId.equals(gId)) {
+                //         this.apGraph.removeEdge(edge);
+                //     }
+                // }
+
                 LengthIndexedLine indexedLine = new LengthIndexedLine(nearestEdge1.geometry);
                 double index = indexedLine.project(csvNode.coord);
                 Coordinate projectedCoord = indexedLine.extractPoint(index);
@@ -497,7 +695,10 @@ public class ApriPathFinder {
 
                 ApriNode nodeP = new ApriNode("P" + projCount, projectedCoord);
                 String eType = "";
-                String gId = nearestEdge1.govRoadId;
+                
+                if(gId == null || gId.isEmpty()) {
+                    gId = "temp" + this.projCount;
+                }
 
                 ApriEdge edgeAP = new ApriEdge("AP" + this.projCount, nodeA, nodeP, firstSeg, eType, "", gId);
                 ApriEdge edgePA = new ApriEdge("PA" + projCount, nodeP, nodeA, firstSeg.reverse(), eType, "", gId);
@@ -512,9 +713,9 @@ public class ApriPathFinder {
                         new Coordinate(projectedCoord)
                 }));
                 ApriEdge edgeBSP = new ApriEdge("BSP" + busStopCount, csvNode,
-                        nodeP, lineBSP, "road", "", null);
+                        nodeP, lineBSP, "road", "", gId+"_BSP");
                 ApriEdge edgePBS = new ApriEdge("PBS" + busStopCount, nodeP, csvNode, lineBSP.reverse(), "road", "",
-                        null);
+                        "temp_BSP");
                 nodeA.addStartEdge(edgeAP);
                 nodeA.addEndEdge(edgePA);
                 nodeB.addStartEdge(edgeBP);
@@ -541,6 +742,9 @@ public class ApriPathFinder {
                 this.apGraph.addNode(csvNode);
                 this.apGraph.addNode(nodeP);
             } else {
+                //
+                // System.out.println("Adding bus stop node: " + csvNode.id + " at " + csvNode.coord.getX()+
+                // ", " + csvNode.coord.getY() + " with no close edges.");
                 // If there are no close edges, Just add orphan nodes.
                 this.apGraph.addNode(csvNode);
             }
@@ -549,17 +753,22 @@ public class ApriPathFinder {
 
     }
 
+    // TODO : Add route time table for bus and subway.
+    // route_interval_distance.csv, routeInfoFromREST.csv, 전체노선현황1.csv, bus_timetable.csv
+
+
     /**
      * Overloading, calling default readSHP
      * 
      * @param filename
+     * @throws ResException 
      */
-    public SimpleFeatureCollection readSHP(String filename) throws ApriException {
+    public SimpleFeatureCollection readSHP(String filename) throws ApriException, ResException {
         File file = new File(filename);
         return readSHP(file);
     }
 
-    public SimpleFeatureCollection readSHP(String filename, String crsName, String charSet) throws ApriException {
+    public SimpleFeatureCollection readSHP(String filename, String crsName, String charSet) throws ApriException, ResException {
         File file = new File(filename);
         return readSHP(file, crsName, charSet);
     }
@@ -569,12 +778,13 @@ public class ApriPathFinder {
      * 
      * @param filename
      * @throws ApriException
+     * @throws ResException 
      */
-    public SimpleFeatureCollection readSHP(File file) throws ApriException {
+    public SimpleFeatureCollection readSHP(File file) throws ApriException, ResException {
         return readSHP(file, "EPSG:5174", "EUC-KR");
     }
 
-    public SimpleFeatureCollection readSHP(File file, String crsName, String charSet) throws ApriException {
+    public SimpleFeatureCollection readSHP(File file, String crsName, String charSet) throws ApriException, ResException {
         Map<String, Object> params = new HashMap<>();
         try {
             params.put("url", file.toURI().toURL());
@@ -586,6 +796,14 @@ public class ApriPathFinder {
         DataStore dataStore;
         try {
             dataStore = DataStoreFinder.getDataStore(params);
+            
+            if (dataStore == null) {
+                System.err.println("DataStore is null, Check file name and parameters.");
+                throw new ResException("DataStore is null", null);
+            }
+            // Debugging information
+
+            System.out.println(dataStore.getInfo().getDescription());
         } catch (IOException e) {
             System.err.println("Unable to open file" + params.get("url").toString());
             System.err.println(e.toString());
@@ -597,11 +815,53 @@ public class ApriPathFinder {
             String typeName = dataStore.getTypeNames()[0];
             SimpleFeatureSource source = dataStore.getFeatureSource(typeName);
             collection = source.getFeatures();
+
+
+            // debugging information
+            System.out.println("Feature type: " + source.getSchema().getTypeName());
+            System.out.println("Number of features: " + collection.size());
         } catch (IOException e) {
             e.printStackTrace();
         }
         return collection;
 
     }
+
+
+public void saveAllEdgesToShp(String filename) throws ApriException, IOException {
+    SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+    typeBuilder.setName("EdgeFeature");
+    try {
+        typeBuilder.setCRS(CRS.decode("EPSG:5179"));
+    } catch (FactoryException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+    typeBuilder.add("the_geom", LineString.class);
+    typeBuilder.add("name", String.class);
+    typeBuilder.add("type", String.class);
+
+    SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+    SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+
+    DefaultFeatureCollection featureCollection = new DefaultFeatureCollection(null, featureType);
+
+    for (ApriEdge edge : this.apGraph.getEdges()) {
+        featureBuilder.add(edge.geometry);
+        featureBuilder.add(edge.edgeTrackName);
+        featureBuilder.add(edge.edgeType);
+        SimpleFeature feature = featureBuilder.buildFeature(null);
+        featureCollection.add(feature);
+    }
+
+    File outFile = new File(filename);
+    writeSFCShapefile(featureCollection, outFile);
+}
+
+
+
+
+
+
 
 }

@@ -1,4 +1,4 @@
-package graph_routing_01;
+package graph_routing_01.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,9 +13,6 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
 
 import graph_routing_01.exceptions.ApriException;
-import graph_routing_01.model.ApriEdge;
-import graph_routing_01.model.ApriGraph;
-import graph_routing_01.model.ApriNode;
 
 public class GraphView {
     private final ApriGraph baseGraph;
@@ -105,7 +102,7 @@ public class GraphView {
         }));
 
         ApriNode nodeP = new ApriNode("ST_BRANCH", projectedCoord);
-        ApriEdge edgeSP = new ApriEdge("SP", startNode, nodeP, lineSP, "road", "",null);
+        ApriEdge edgeSP = new ApriEdge("SP", startNode, nodeP, lineSP, "road", "","tempRoadId");
         ApriEdge edgePB = new ApriEdge("ST_PB", nodeP, nodeB, secondSeg, nearestEdge.edgeType, "",nearestEdge.govRoadId);
         ApriEdge edgePA = new ApriEdge("ST_BP", nodeP, nodeA, firstSeg.reverse(), nearestEdge.edgeType,
                 "",nearestEdge.govRoadId);
@@ -158,9 +155,9 @@ public class GraphView {
                 new Coordinate(projectedCoord),
                 new Coordinate(this.endNodeE.coord)
         }));
-        this.endAP = new ApriEdge("endAP", nodeA, this.endNodeP, firstSeg, "road", "",null);
-        this.endBP = new ApriEdge("endBP", nodeB, this.endNodeP, secondSeg.reverse(), "road","", null);
-        this.endPE = new ApriEdge("endPE", this.endNodeP, this.endNodeE, linePE, "road","", null);
+        this.endAP = new ApriEdge("endAP", nodeA, this.endNodeP, firstSeg, "road", "","tempRoadId");
+        this.endBP = new ApriEdge("endBP", nodeB, this.endNodeP, secondSeg.reverse(), "road","", "tempRoadId");
+        this.endPE = new ApriEdge("endPE", this.endNodeP, this.endNodeE, linePE, "road","", "tempRoadId");
 
         return this.endNodeE;
     }

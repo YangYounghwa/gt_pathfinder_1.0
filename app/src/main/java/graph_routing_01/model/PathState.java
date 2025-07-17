@@ -1,6 +1,4 @@
-package graph_routing_01;
-
-import graph_routing_01.model.ApriNode;
+package graph_routing_01.model;
 
 /**
  *  PathState used for priority queue in Dijkstra's shortest path search.
@@ -8,12 +6,12 @@ import graph_routing_01.model.ApriNode;
  *  PathState.time indicates path length in Dijkstra's path length
  */
 public class PathState implements Comparable<PathState> {
-    ApriNode node;
-    String prevType;
-    String prevName; //save bus name;
-    double time;
+    public ApriNode node;
+    public String prevType;
+    public String prevName; //save bus name;
+    public double time;
 
-    PathState(ApriNode node, String prevType,String prevName, double time) {
+    public PathState(ApriNode node, String prevType,String prevName, double time) {
         this.node = node;
         this.prevType = prevType;
         this.prevName = prevName;

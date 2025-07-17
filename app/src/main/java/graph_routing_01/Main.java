@@ -18,6 +18,7 @@ import org.locationtech.jts.geom.Coordinate;
 
 import org.locationtech.jts.geom.LineString;
 
+import graph_routing_01.Finder.ApriPathFinder;
 import graph_routing_01.model.ApriPath;
 
 
@@ -36,8 +37,19 @@ public class Main {
         // 그 후 도로의 양끝점은 유지 한 채로 중간을 단순화 하여 데이터를 단순화 하였습니다. 
         apf.buildBaseGraph(apf.readSHP("data_folder\\simplified_split2.shp"));
 
+
         // 정류소의 위치를 도로에 추가해줍니다. 
-        apf.addCsvNodes("data_folder\\인천_정류소_20241231_요약.csv");
+        apf.addBusstopNodes("data_folder\\busstop_location.csv");
+        // problem occured here
+
+        apf.initBusTimeTable(new File("data_folder\\bus_timetable.csv"));
+
+        apf.addBusRouteEdges("data_folder\\route_interval_distance.csv");
+
+
+
+        
+        apf.saveAllEdgesToShp("result\\all_edges.shp");
 
         // 버스 구간 추가 구현이 미완성입니다. 
         // 버스 구간 데이터를 다듬어야합니다.
@@ -48,10 +60,13 @@ public class Main {
 
         // 버스 막차 시간
 
-        double stLat = 37.4733855;
-        double stLon = 126.6314740;
-        double endLat = 37.4543563;
-        double endLon = 126.7046597;
+
+        // 37.449910,126.670039
+        //37.536697,126.728416
+        double stLat = 37.449910;
+        double stLon = 126.670039;
+        double endLat = 37.536697;
+        double endLon = 126.728416;
         //경도 latitude 위도 latitude,
         //시작점과 종료점의 위도와 경도를 입력하면 경로 클래스를 반환합니다.
         // 주의점은 위도와 경도의 위치가 일반적인 맵과 반대입니다. 
@@ -85,11 +100,11 @@ public class Main {
             String roadName = path2.roadName.get(j);
             String roadType = path2.roadType.get(j);
             Coordinate[] cords = ls.getCoordinates();
-            System.out.println("도로명 : "+roadName+" 타입 : "+ roadType);
+            // System.out.println("도로명 : "+roadName+" 타입 : "+ roadType);
             for(int i =0 ; i < cords.length; i++){
-                System.out.print("("+cords[i].getX()+","+cords[i].getY()+ ")");
+                // System.out.print("("+cords[i].getX()+","+cords[i].getY()+ ")");
             }
-            System.out.println();
+            // System.out.println();
         }
         System.out.print("총 시간 (s) : "+ path2.totalTime);
 
