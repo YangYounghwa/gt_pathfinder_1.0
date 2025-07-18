@@ -750,6 +750,7 @@ public class ApriPathFinder {
                 // 2 nodes added
                 this.apGraph.addNode(csvNode);
                 this.apGraph.addNode(nodeP);
+                this.projCount++;
             } else {
                 //
                 // System.out.println("Adding bus stop node: " + csvNode.id + " at " + csvNode.coord.getX()+
