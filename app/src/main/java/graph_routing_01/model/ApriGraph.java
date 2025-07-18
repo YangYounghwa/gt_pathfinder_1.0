@@ -105,14 +105,50 @@ public class ApriGraph {
 
         for (Object edgeO : candidateEdges) {
             ApriEdge edge = (ApriEdge) edgeO;
+
+            if(!"road".equals(edge.edgeType)) continue;
+
             double distance = edge.geometry.distance(point);
-            if (distance < minDistance || edge.edgeType.equals("road")) {
+            if (distance < minDistance) {
                 minDistance = distance;
                 nearestEdge = edge;
             }
         }
         return nearestEdge;
     }
+    
+    public ApriEdge findNearestEdgeV2(Coordinate coord, double radius){
+        Envelope searchEnv = new Envelope(coord);
+        searchEnv.expandBy(radius);
+
+        @SuppressWarnings("unchecked")
+        List<Object> candidateEdges = edgeSpatialIndex.query(searchEnv);
+
+        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+        Point point = geometryFactory.createPoint(coord);
+        ApriEdge nearestEdge = null;
+
+        double minDistance = Double.MAX_VALUE;
+
+        for(Object edgeO : candidateEdges){
+            ApriEdge edge =(ApriEdge) edgeO;
+
+            if(!"road".equals(edge.edgeType))continue;
+
+            double distance = edge.geometry.distance(point);
+            if(distance<minDistance){
+                minDistance=distance;
+                nearestEdge=edge;
+            }
+
+        }
+
+        return nearestEdge;
+
+    }
+
+
+
 
     private static Envelope expandEnvelope(Envelope original, double epsilon) {
         return new Envelope(

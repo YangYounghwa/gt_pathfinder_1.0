@@ -565,7 +565,7 @@ public class ApriPathFinder {
             throw new ApriException("Error while opening the file, ApriPathFinder.addCsvNodes()", e);
         }
         
-    
+        System.out.println("Bus Routes added.");
     }
 
 
@@ -663,6 +663,13 @@ public class ApriPathFinder {
             ApriEdge nearestEdge1 = this.apGraph.findNearestEdge(csvNode.coord,100);
 
             if (nearestEdge1 != null) {
+
+                // TODO : If the new node is not between two nodes, 
+                    // then do not split the edge. just add a new node and edges.
+
+
+
+                
                 // If there is a close edge, add a new node and edges.
 
                 // System.out.println("Adding bus stop node: " + csvNode.id + " at " + csvNode.coord   
@@ -680,6 +687,8 @@ public class ApriPathFinder {
                     }
                 }
 
+            
+
                 // Same thing. No need to check both directions.
                 // for (ApriEdge edge : nodeB.startEdges) {
                 //     if (edge.source == nodeA & edge.govRoadId.equals(gId)) {
@@ -694,7 +703,7 @@ public class ApriPathFinder {
                 LineString secondSeg = (LineString) indexedLine.extractLine(index, indexedLine.getEndIndex());
 
                 ApriNode nodeP = new ApriNode("P" + projCount, projectedCoord);
-                String eType = "";
+                String eType = "road";
                 
                 if(gId == null || gId.isEmpty()) {
                     gId = "temp" + this.projCount;
