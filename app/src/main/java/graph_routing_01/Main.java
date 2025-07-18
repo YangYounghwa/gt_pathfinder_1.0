@@ -71,7 +71,9 @@ public class Main {
         //시작점과 종료점의 위도와 경도를 입력하면 경로 클래스를 반환합니다.
         // 주의점은 위도와 경도의 위치가 일반적인 맵과 반대입니다. 
         // gis 시스템들의 custom인 듯 합니다.
+        System.out.println("Finding Path");
         ApriPath path = apf.findPath(stLon,stLat,endLon,endLat);
+        System.out.println("Path Found");
         if (path == null) 
             System.err.println("경로를 탐색 실패");
 

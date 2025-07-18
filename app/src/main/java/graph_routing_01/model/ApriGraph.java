@@ -20,6 +20,7 @@ import org.locationtech.jts.index.quadtree.Quadtree;
  * Both Spatial Tree and Index search possible.
  */
 public class ApriGraph {
+    private static final double ENVELOPE_EXPANSION = 100.0;
     protected final Map<String, ApriNode> nodes = new HashMap<>();
     protected final Map<String, ApriEdge> edges = new HashMap<>();
     private final Quadtree nodeSpatialIndex = new Quadtree();
@@ -61,6 +62,7 @@ public class ApriGraph {
         nodes.remove(node.id);
         Envelope expandedEnv = expandEnvelope(new Envelope(node.coord), epsilon);
         nodeSpatialIndex.remove(expandedEnv, node);
+        
     }
 
     public void removeNode(String id) {
@@ -72,7 +74,11 @@ public class ApriGraph {
 
     public void addEdge(ApriEdge edge) {
         edges.put(edge.id, edge);
-        edgeSpatialIndex.insert(edge.geometry.getEnvelopeInternal(), edge);
+
+        Envelope expanded = expandEnvelope(edge.geometry.getEnvelopeInternal(), ENVELOPE_EXPANSION); // or MAX_PROJECT_DISTANCE
+        edgeSpatialIndex.insert(expanded, edge);
+
+        // edgeSpatialIndex.insert(edge.geometry.getEnvelopeInternal(), edge);
     }
 
     public void removeEdge(String id) {
@@ -83,6 +89,9 @@ public class ApriGraph {
 
     public void removeEdge(ApriEdge edge) {
         edges.remove(edge.id);
+
+
+
         edgeSpatialIndex.remove(edge.geometry.getEnvelopeInternal(), edge);
     }
 
