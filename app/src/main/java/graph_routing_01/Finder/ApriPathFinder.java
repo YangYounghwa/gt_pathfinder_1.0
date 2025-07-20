@@ -823,12 +823,13 @@ public class ApriPathFinder {
             System.out.println("Number of features: " + collection.size());
         } catch (IOException e) {
             e.printStackTrace();
+             throw new ApriException("Unable to open file" + params.get("url"), e);
         }
         return collection;
 
     }
 
-    //AI generated methods..  
+
 
     public void saveAllEdgesToShp(String filename) throws ApriException, IOException {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
@@ -836,8 +837,8 @@ public class ApriPathFinder {
         try {
             typeBuilder.setCRS(CRS.decode("EPSG:5179"));
         } catch (FactoryException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            throw new ApriException("Unable to decode", e);
         }
         typeBuilder.add("the_geom", LineString.class);
         typeBuilder.add("name", String.class);
@@ -860,80 +861,5 @@ public class ApriPathFinder {
         writeSFCShapefile(featureCollection, outFile);
     }
 
-    private void connectBusStopToNode(ApriNode busStop, ApriNode target, String gId) {
-        GeometryFactory factory = JTSFactoryFinder.getGeometryFactory();
-        LineString line = factory.createLineString(new Coordinate[] { busStop.coord, target.coord });
-
-        ApriEdge toRoad = new ApriEdge("BSP" + busStopCount, busStop, target, line, "road", "", gId + "_BSP");
-        ApriEdge fromRoad = new ApriEdge("PBS" + busStopCount++, target, busStop, line.reverse(), "road", "",
-                gId + "_BSP");
-
-        busStop.addStartEdge(toRoad);
-        busStop.addEndEdge(fromRoad);
-        target.addStartEdge(fromRoad);
-        target.addEndEdge(toRoad);
-
-        apGraph.addEdge(toRoad);
-        apGraph.addEdge(fromRoad);
-    }
-
-    private void insertBusStopNode(ApriNode busStop) {
-    ApriEdge nearestEdge = apGraph.findNearestEdge(busStop.coord, MAX_PROJECT_DISTANCE);
-    if (nearestEdge == null) {
-        System.err.println("No nearby edge for bus stop at: " + busStop.coord);
-        apGraph.addNode(busStop);
-        return;
-    }
-
-    ApriNode nodeA = nearestEdge.source;
-    ApriNode nodeB = nearestEdge.target;
-    apGraph.removeEdge(nearestEdge);
-    String gId = (nearestEdge.govRoadId != null) ? nearestEdge.govRoadId : "temp" + projCount;
-
-    LengthIndexedLine indexedLine = new LengthIndexedLine(nearestEdge.geometry);
-    double index = indexedLine.project(busStop.coord);
-    Coordinate projectedCoord = indexedLine.extractPoint(index);
-
-    // 🔍 Distance check
-    if (distance(projectedCoord, busStop.coord) > MAX_PROJECT_DISTANCE) {
-        System.err.println("Projected point too far from bus stop: " + busStop.coord);
-        apGraph.addNode(busStop);
-        return;
-    }
-
-    // 🔍 Endpoint check
-    double startIdx = indexedLine.getStartIndex();
-    double endIdx = indexedLine.getEndIndex();
-    if (Math.abs(index - startIdx) < 0.01 || Math.abs(index - endIdx) < 0.01) {
-        ApriNode endNode = (Math.abs(index - startIdx) < 0.01) ? nodeA : nodeB;
-        connectBusStopToNode(busStop, endNode, gId);
-        return;
-    }
-
-    // ✅ Split the edge
-    LineString seg1 = (LineString) indexedLine.extractLine(startIdx, index);
-    LineString seg2 = (LineString) indexedLine.extractLine(index, endIdx);
-    ApriNode nodeP = new ApriNode("P" + projCount++, projectedCoord);
-
-    ApriEdge edgeAP = new ApriEdge("AP" + projCount, nodeA, nodeP, seg1, "road", "", gId);
-    ApriEdge edgePA = new ApriEdge("PA" + projCount, nodeP, nodeA, seg1.reverse(), "road", "", gId);
-    ApriEdge edgeBP = new ApriEdge("BP" + projCount, nodeB, nodeP, seg2.reverse(), "road", "", gId);
-    ApriEdge edgePB = new ApriEdge("PB" + projCount, nodeP, nodeB, seg2, "road", "", gId);
-
-    nodeA.addStartEdge(edgeAP); nodeA.addEndEdge(edgePA);
-    nodeB.addStartEdge(edgeBP); nodeB.addEndEdge(edgePB);
-    nodeP.addStartEdge(edgePA); nodeP.addEndEdge(edgeAP);
-    nodeP.addStartEdge(edgePB); nodeP.addEndEdge(edgeBP);
-
-    apGraph.addNode(busStop);
-    apGraph.addNode(nodeP);
-    apGraph.addEdge(edgeAP); apGraph.addEdge(edgePA);
-    apGraph.addEdge(edgeBP); apGraph.addEdge(edgePB);
-
-    connectBusStopToNode(busStop, nodeP, gId);
-}
-private double distance(Coordinate a, Coordinate b) {
-    return a.distance(b); // returns Euclidean distance (in coordinate units)
-}
-
+    
 }
