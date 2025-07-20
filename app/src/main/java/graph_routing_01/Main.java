@@ -48,7 +48,7 @@ public class Main {
 
 
 
-        
+        System.out.println("Saving files."); 
         apf.saveAllEdgesToShp("result\\all_edges.shp");
 
         // 버스 구간 추가 구현이 미완성입니다. 
@@ -102,7 +102,7 @@ public class Main {
             String roadName = path2.roadName.get(j);
             String roadType = path2.roadType.get(j);
             Coordinate[] cords = ls.getCoordinates();
-            // System.out.println("도로명 : "+roadName+" 타입 : "+ roadType);
+            System.out.println("도로명 : "+roadName+" 타입 : "+ roadType);
             for(int i =0 ; i < cords.length; i++){
                 // System.out.print("("+cords[i].getX()+","+cords[i].getY()+ ")");
             }
