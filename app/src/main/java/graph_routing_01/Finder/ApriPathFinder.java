@@ -221,6 +221,8 @@ public class ApriPathFinder {
 
                 // After adding bus routes, edit this part.
                 // searchEdge to route time.
+                // TODO : 길찾기 알고리즘 시에 버스 시간 대조 기능 추가, 환승시간 패널티 부과 
+
                 double pathLength = currentPathState.time + searchEdge.walkTLength;
                 ApriNode targetNode = searchEdge.target;
 
