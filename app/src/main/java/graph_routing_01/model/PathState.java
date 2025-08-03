@@ -6,10 +6,26 @@ package graph_routing_01.model;
  *  PathState.time indicates path length in Dijkstra's path length
  */
 public class PathState implements Comparable<PathState> {
-    public ApriNode node;
-    public String prevType;
-    public String prevName; //save bus name;
-    public double time;
+    private ApriNode node;
+    private String prevType;
+    public ApriNode getNode() {
+        return node;
+    }
+
+    public String getPrevType() {
+        return prevType;
+    }
+
+    public String getPrevName() {
+        return prevName;
+    }
+
+    public double getTime() {
+        return time;
+    }
+
+    private String prevName; //save bus name;
+    private double time;
 
     public PathState(ApriNode node, String prevType,String prevName, double time) {
         this.node = node;
@@ -22,5 +38,6 @@ public class PathState implements Comparable<PathState> {
         return Double.compare(this.time, o.time);
 
     }
+    
 
 }

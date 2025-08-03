@@ -119,14 +119,15 @@ public class ApriPathFinder {
      * @param endLat end latitude
      * @return ApriPath instance, null if path not found
      * @throws ApriException
+     * @throws ApriPathExLibError 
      */
-    public ApriPath findPath(double stLon, double stLat, double endLon, double endLat) throws ApriException {
+    public ApriPath findPath(double stLon, double stLat, double endLon, double endLat) throws ApriException, ApriPathExLibError {
         // default findPath
         return findPath(stLon, stLat, endLon, endLat, 0.0, false, 0);
     }
 
     /**
-     * receives coordinate in EPSG:4326 a.k.a WGS84
+     * Receives coordinate in EPSG:4326 a.k.a WGS84
      * transforms them into EPSG:5179 then returns ApriPath
      * multiple findPath methods can be called at the same time.
      * Shared memory are not modified. (ApriGraph)
@@ -135,15 +136,16 @@ public class ApriPathFinder {
      * @param stLat     start latitude
      * @param endLon    end longitude
      * @param endLat    end latitude
-     * @param startTime start time in seconds. in
-     * @param timeCheck check time for bus and subways.
-     * @param dayType   1:Saturday, 2:Sundays and holidays. else 0. Usually Korea's
+     * @param startTime start time in seconds. 
+     * @param timeCheck Check time for bus and subways. If true it will check first and last train/bus time.
+     * @param dayType   1:Saturday, 2:Sundays and holidays. else 0. Korea's
      *                  transit systems use 3 types of days for operation.
      * @return ApriPath instance, null if path not found
-     * @throws ApriException
+     * @throws ApriException 
+     * @throws ApriPathExLibError When trying to read invalid files.
      */
     public ApriPath findPath(double stLon, double stLat, double endLon, double endLat, double startTime,
-            Boolean timeCheck, int dayType) throws ApriException {
+            Boolean timeCheck, int dayType) throws ApriException, ApriPathExLibError {
         if (apGraph == null) {
             System.err.println("GraphView must be built in advance.");
             throw new ApriException("GraphView not constructed", null);
@@ -209,23 +211,45 @@ public class ApriPathFinder {
 
         PathState startState = new PathState(stNode, "road", "walk", 0.0);
         pq.add(startState);
-        visited.put(startState.node.id, 0.0);
+        visited.put(startState.getNode().id, 0.0);
         double totalLength = 0;
 
         while (!pq.isEmpty()) {
             PathState currentPathState = pq.poll();
 
-            ApriNode currentNode = currentPathState.node;
+
+            // Impossible routes are skipped.
+            if (currentPathState.getTime() == Double.POSITIVE_INFINITY) continue;
+
+            ApriNode currentNode = currentPathState.getNode();
             for (Object edgeO : currentNode.startEdges) {
                 ApriEdge searchEdge = (ApriEdge) edgeO;
+                double penalty = 0.0;
 
                 // After adding bus routes, edit this part.
                 // searchEdge to route time.
                 // TODO : 길찾기 알고리즘 시에 버스 시간 대조 기능 추가, 환승시간 패널티 부과 
-
-                double pathLength = currentPathState.time + searchEdge.walkTLength;
+                
+                
                 ApriNode targetNode = searchEdge.target;
+                String prevName = currentPathState.getPrevName();
+                String prevType = currentPathState.getPrevType();
+                String currentName = searchEdge.edgeTrackName;
+                String currentType = searchEdge.edgeType;
+                // if(prevName.) 
+                // Add penalty Here
+                
+                //use this.busTimeTable               
+                if(currentType.equals("BUS")){
+                    if(currentName.equals(prevName) && prevType.equals("BUS")){
+                        penalty = 0.0;                   
+                    }
+                    else{
+                        penalty = this.busTimeTable.getExpectedIntervalInSeconds("currentName",dayType);
+                    }
+                }
 
+                double pathLength = currentPathState.getTime() + searchEdge.walkTLength+penalty;
                 if (targetNode == nearEndA | targetNode == nearEndB) {
                     if (targetNode == nearEndA)
                         isA = true;
@@ -459,12 +483,12 @@ public class ApriPathFinder {
 
     }
 
-    public void addBusRouteEdges(String filename) throws ApriException, ResException {
+    public void addBusRouteEdges(String filename) throws ApriException, ResException, ApriPathExLibError {
         File file = new File(filename);
         addBusRouteEdges(file, null, true);
     }
 
-    public void addBusRouteEdges(File file, String charSet, Boolean isHeadered) throws ApriException, ResException {
+    public void addBusRouteEdges(File file, String charSet, Boolean isHeadered) throws ApriException, ResException, ApriPathExLibError {
         List<ApriEdge> csvEdges = new ArrayList<>();
         // Adjusted for "bus_route.csv"
         if (this.apGraph == null) {
