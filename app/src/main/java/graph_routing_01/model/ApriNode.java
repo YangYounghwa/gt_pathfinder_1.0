@@ -15,6 +15,12 @@ public class ApriNode {
     public String type = "RD";
     public List<ApriEdge> startEdges = new ArrayList<>();
     public List<ApriEdge> endEdges = new ArrayList<>(); 
+    
+
+    /**
+     * Place holder. Will be used for last bus/train arrival estimate.
+     */
+    public double distanceFromStart = 0.0; 
     public ApriNode(String id, Coordinate coord){
         this.id= id;
         this.coord = coord;

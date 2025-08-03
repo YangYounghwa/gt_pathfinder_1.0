@@ -112,6 +112,15 @@ public class BusTimeTable {
         }
     }
 
+
+    /**
+     * Expected time for bus arrivals. Conservative expectation
+     *  ExpectedIntervalInSeconds = weighted averge (1*min + 2*max)/3 
+     * @param routeName
+     * @param dayType
+     * @return
+     * @throws ApriPathExLibError
+     */
     public double getExpectedIntervalInSeconds(String routeName, int dayType) throws ApriPathExLibError {
 
         double minIntervalMinute = this.busTimes.get(getBusId(routeName)).getMinInterval(dayType);
