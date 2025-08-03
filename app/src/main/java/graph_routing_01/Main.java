@@ -49,16 +49,14 @@ public class Main {
 
 
         System.out.println("Saving files."); 
+        
+        // 이게 꽤나 오래 걸리는 구간.
         apf.saveAllEdgesToShp("result\\all_edges.shp");
 
         // 버스 구간 추가 구현이 미완성입니다. 
-        // 버스 구간 데이터를 다듬어야합니다.
         // 현재 인천시에 버스 구간 노드 정보 요청했고 업데이트 및 검토 후 업로드 된다고 답변 받았습니다.
-        //apf.addBusEdges("csv path?");
-        //버스 구간은 csv 두개를 join해서 만들어야 할 듯 합니다. 
-        // join된 csv파일을 만들고 바로 넣는 것이 좋을 듯 합니다.
+        // 음... 신규 버스 데이터를 받긴 했는데..  버스 경로 node는 없습니다. 따라서 결과도 버스 구간은 직선으로만 나올 예정입니다.
 
-        // 버스 막차 시간
 
 
         // 37.449910,126.670039
@@ -109,7 +107,6 @@ public class Main {
             // System.out.println();
         }
         System.out.print("총 시간 (s) : "+ path2.totalTime);
-
     }
 
 }

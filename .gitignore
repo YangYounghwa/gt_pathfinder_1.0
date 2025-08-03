@@ -6,13 +6,17 @@ build
 
 
 
-# data folder
-data_folder
-# result folder
-result
+# Data folder. I do not have any license to share these files.
+data_folder/
+# Result folder. Same as Datafolder.
+result/
+
+
 # Java binary files
 *.class
 *.jar
 *.war
 *.ear
 *.nar
+
+
