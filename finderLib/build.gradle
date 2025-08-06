@@ -7,8 +7,13 @@
 
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
-    id 'application'
+    // id 'application'
+    id 'java-library'
 }
+
+group = 'apri'
+version = '1.0.0'
+
 
 repositories {
     // Use Maven Central for resolving dependencies.a
@@ -49,16 +54,22 @@ java {
     }
 }
 
-application {
-    // Define the main class for the application.
-    mainClass = 'graph_routing_01.Main'
-}
+// Not an application, just a library.
+// application {
+//     // Define the main class for the application.
+//     mainClass = 'graph_routing_01.Main'
+// }
 
-// Exclude Main.java
+// Exclude Main.java,
+// Main.java is only for testing.
 sourceSets {
     main{
         java {
             exclude '**/Main.java'
         }
     }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
