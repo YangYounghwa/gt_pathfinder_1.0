@@ -1,4 +1,4 @@
-package graph_routing_01.model;
+package graph_routing_01.Finder.model;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,7 +8,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import graph_routing_01.exceptions.ApriPathExLibError;
+import graph_routing_01.Finder.exceptions.ApriPathExLibError;
 
 // TODO : Make it singleton, or use static methods to access.
 // TODO : Read from csv file. (Maybe from REST API?)

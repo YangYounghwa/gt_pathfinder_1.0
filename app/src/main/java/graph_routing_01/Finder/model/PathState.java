@@ -1,4 +1,4 @@
-package graph_routing_01.model;
+package graph_routing_01.Finder.model;
 
 /**
  *  PathState used for priority queue in Dijkstra's shortest path search.

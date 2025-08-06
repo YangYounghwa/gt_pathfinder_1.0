@@ -19,7 +19,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
 
 import graph_routing_01.Finder.ApriPathFinder;
-import graph_routing_01.model.ApriPath;
+import graph_routing_01.Finder.model.ApriPath;
 
 
 public class Main {

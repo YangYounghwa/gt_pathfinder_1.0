@@ -1,4 +1,4 @@
-package graph_routing_01.model;
+package graph_routing_01.Finder.model;
 
 import org.locationtech.jts.geom.LineString;
 

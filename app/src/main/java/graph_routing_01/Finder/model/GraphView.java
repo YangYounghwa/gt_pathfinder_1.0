@@ -1,4 +1,4 @@
-package graph_routing_01.model;
+package graph_routing_01.Finder.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,7 +12,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
 
-import graph_routing_01.exceptions.ApriException;
+import graph_routing_01.Finder.exceptions.ApriException;
 
 public class GraphView {
     private final ApriGraph baseGraph;

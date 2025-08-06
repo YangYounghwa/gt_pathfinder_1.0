@@ -1,4 +1,4 @@
-package graph_routing_01.exceptions;
+package graph_routing_01.Finder.exceptions;
 
 
 /**
