@@ -54,3 +54,11 @@ application {
     mainClass = 'graph_routing_01.Main'
 }
 
+// Exclude Main.java
+sourceSets {
+    main{
+        java {
+            exclude '**/Main.java'
+        }
+    }
+}
