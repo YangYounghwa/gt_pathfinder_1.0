@@ -30,16 +30,15 @@ public class ApriPath {
         roadName.add(rName);
         roadType.add(rType);
     }
-
-    public void toJSON(){
-        // each LineString will have array of coordinates
-        // Array of LineStrings.. 
+    // public void toJSON(){
+    //     // each LineString will have array of coordinates
+    //     // Array of LineStrings.. 
         
 
-    }
-    public void fromJSON(){
+    // }
+    // public void fromJSON(){
 
 
-    }
+    // }
 
 }
