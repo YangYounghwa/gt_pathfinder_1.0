@@ -63,6 +63,7 @@ import graph_routing_01.Finder.model.ApriNode;
 import graph_routing_01.Finder.model.ApriPath;
 import graph_routing_01.Finder.model.BusTimeTable;
 import graph_routing_01.Finder.model.GraphView;
+import graph_routing_01.Finder.model.MyFeatureCollection;
 import graph_routing_01.Finder.model.PathState;
 
 public class ApriPathFinder {
@@ -119,9 +120,10 @@ public class ApriPathFinder {
      * @param endLat end latitude
      * @return ApriPath instance, null if path not found
      * @throws ApriException
-     * @throws ApriPathExLibError 
+     * @throws ApriPathExLibError
      */
-    public ApriPath findPath(double stLon, double stLat, double endLon, double endLat) throws ApriException, ApriPathExLibError {
+    public ApriPath findPath(double stLon, double stLat, double endLon, double endLat)
+            throws ApriException, ApriPathExLibError {
         // default findPath
         return findPath(stLon, stLat, endLon, endLat, 0.0, false, 0);
     }
@@ -136,12 +138,13 @@ public class ApriPathFinder {
      * @param stLat     start latitude
      * @param endLon    end longitude
      * @param endLat    end latitude
-     * @param startTime start time in seconds. 
-     * @param timeCheck Check time for bus and subways. If true it will check first and last train/bus time.
+     * @param startTime start time in seconds.
+     * @param timeCheck Check time for bus and subways. If true it will check first
+     *                  and last train/bus time.
      * @param dayType   1:Saturday, 2:Sundays and holidays. else 0. Korea's
      *                  transit systems use 3 types of days for operation.
      * @return ApriPath instance, null if path not found
-     * @throws ApriException 
+     * @throws ApriException
      * @throws ApriPathExLibError When trying to read invalid files.
      */
     public ApriPath findPath(double stLon, double stLat, double endLon, double endLat, double startTime,
@@ -217,9 +220,9 @@ public class ApriPathFinder {
         while (!pq.isEmpty()) {
             PathState currentPathState = pq.poll();
 
-
             // Impossible routes are skipped.
-            if (currentPathState.getTime() == Double.POSITIVE_INFINITY) continue;
+            if (currentPathState.getTime() == Double.POSITIVE_INFINITY)
+                continue;
 
             ApriNode currentNode = currentPathState.getNode();
             for (Object edgeO : currentNode.startEdges) {
@@ -228,28 +231,26 @@ public class ApriPathFinder {
 
                 // After adding bus routes, edit this part.
                 // searchEdge to route time.
-                // TODO : 길찾기 알고리즘 시에 버스 시간 대조 기능 추가, 환승시간 패널티 부과 
-                
-                
+                // TODO : 길찾기 알고리즘 시에 버스 시간 대조 기능 추가, 환승시간 패널티 부과
+
                 ApriNode targetNode = searchEdge.target;
                 String prevName = currentPathState.getPrevName();
                 String prevType = currentPathState.getPrevType();
-                String currentName = (searchEdge.edgeTrackName== null) ? "" : searchEdge.edgeTrackName;
+                String currentName = (searchEdge.edgeTrackName == null) ? "" : searchEdge.edgeTrackName;
                 String currentType = searchEdge.edgeType;
-                // if(prevName.) 
+                // if(prevName.)
                 // Add penalty Here
-                
-                //use this.busTimeTable               
-                if(currentType.equals("BUS")){
-                    if(currentName.equals(prevName) && prevType.equals("BUS")){
-                        penalty = 0.0;                   
-                    }
-                    else{
-                        penalty = this.busTimeTable.getExpectedIntervalInSeconds(currentName,dayType);
+
+                // use this.busTimeTable
+                if (currentType.equals("BUS")) {
+                    if (currentName.equals(prevName) && prevType.equals("BUS")) {
+                        penalty = 0.0;
+                    } else {
+                        penalty = this.busTimeTable.getExpectedIntervalInSeconds(currentName, dayType);
                     }
                 }
 
-                double pathLength = currentPathState.getTime() + searchEdge.walkTLength+penalty;
+                double pathLength = currentPathState.getTime() + searchEdge.walkTLength + penalty;
                 if (targetNode == nearEndA | targetNode == nearEndB) {
                     if (targetNode == nearEndA)
                         isA = true;
@@ -381,7 +382,7 @@ public class ApriPathFinder {
         }
     }
 
-    public void buildBaseGraph(SimpleFeatureCollection collection) throws ApriException, ResException {
+    public void buildBaseGraph(MyFeatureCollection collection) throws ApriException, ResException {
 
         LineStringGraphGenerator lineGen = new LineStringGraphGenerator();
         FeatureGraphGenerator fGraphGen = new FeatureGraphGenerator(lineGen);
@@ -490,9 +491,10 @@ public class ApriPathFinder {
 
     public void addBusRouteEdges(File file) throws ApriException, ResException, ApriPathExLibError {
         addBusRouteEdges(file, null, true);
-        }
+    }
 
-    public void addBusRouteEdges(File file, String charSet, Boolean isHeadered) throws ApriException, ResException, ApriPathExLibError {
+    public void addBusRouteEdges(File file, String charSet, Boolean isHeadered)
+            throws ApriException, ResException, ApriPathExLibError {
         List<ApriEdge> csvEdges = new ArrayList<>();
 
         // apf.addBusRouteEdges("data_folder\\route_interval_distance.csv");
@@ -522,12 +524,11 @@ public class ApriPathFinder {
             String bsOrderPrior = null;
             String intervalPrior = null;
 
-
             // Debug line
-            int testHeadShow =0;
+            int testHeadShow = 0;
 
             while ((record = csvReader.readNext()) != null) {
-                
+
                 String routeId = record[0].trim(); // routeID
                 String stopId = record[2].trim(); // stopID
                 String direction = record[4].trim(); // direction
@@ -535,7 +536,7 @@ public class ApriPathFinder {
                 String interval = record[7].trim(); // interval
 
                 // Debug line start
-                if(testHeadShow < 10) {
+                if (testHeadShow < 10) {
                     System.out.println("routeId: " + routeId + ", stopId: " + stopId + ", direction: " + direction
                             + ", bsOrder: " + bsOrder + ", interval: " + interval);
                 }
@@ -571,8 +572,9 @@ public class ApriPathFinder {
 
                             ApriEdge edge1 = new ApriEdge("Eb" + routeId + "_" + stopId, startNode, endNode, busLine,
                                     "BUS", edgeTrackName, routeId, busTime);
-                            // ApriEdge edge2 = new ApriEdge("Ea" + routeId + "_" + stopId, endNode, startNode,
-                            //         busLine.reverse(), "BUS", edgeTrackName, routeId, busTime);
+                            // ApriEdge edge2 = new ApriEdge("Ea" + routeId + "_" + stopId, endNode,
+                            // startNode,
+                            // busLine.reverse(), "BUS", edgeTrackName, routeId, busTime);
                             this.apGraph.addEdge(edge1);
                             // this.apGraph.addEdge(edge2);
                             startNode.addStartEdge(edge1);
@@ -613,9 +615,9 @@ public class ApriPathFinder {
         System.out.println("Bus Routes added.");
     }
 
-    public void addBusstopNodes(File file) throws ApriException, ResException{
+    public void addBusstopNodes(File file) throws ApriException, ResException {
 
-        addBusstopNodes(file,null,true);
+        addBusstopNodes(file, null, true);
     }
 
     public void addBusstopNodes(String filename) throws ApriException, ResException {
@@ -640,11 +642,41 @@ public class ApriPathFinder {
      */
     public void addBusstopNodes(File file, String charSet, Boolean isHeadered) throws ApriException, ResException {
 
-
         // Debug line start
         System.out.println("Adding bus stop nodes from file: " + file.getName());
         int testHeadShow = 0;
         // Debug line end
+
+        System.setProperty("org.geotools.referencing.forceXY", "true"); // lon,lat order
+
+        CoordinateReferenceSystem srcCRS;
+        CoordinateReferenceSystem wgs84;
+        CoordinateReferenceSystem destCRS;
+        MathTransform tx; // final transform 5174 -> 4326 -> 5179
+
+        try {
+            srcCRS = CRS.decode("EPSG:5174", true); // Korean 1985 / Modified Central
+            wgs84 = org.geotools.referencing.crs.DefaultGeographicCRS.WGS84; // EPSG:4326
+            destCRS = CRS.decode("EPSG:5179", true); // KGD2002 / Unified
+
+            // Try strict direct first (best). If it fails, build a lenient WGS84 pivot.
+            try {
+                tx = CRS.findMathTransform(srcCRS, destCRS, false); // may throw Bursa-Wolf error
+            } catch (org.geotools.api.referencing.operation.OperationNotFoundException e) {
+                MathTransform toWgs = CRS.findMathTransform(srcCRS, wgs84, true);
+                MathTransform fromWgs = CRS.findMathTransform(wgs84, destCRS, true);
+                tx = org.geotools.referencing.operation.transform.ConcatenatedTransform.create(toWgs, fromWgs);
+            }
+
+            if (testHeadShow < 10) {
+                System.out.println("src=" + CRS.toSRS(srcCRS));
+                System.out.println("mid=WGS84");
+                System.out.println("dest=" + CRS.toSRS(destCRS));
+            }
+
+        } catch (org.geotools.api.referencing.FactoryException fe) {
+            throw new ApriException("Failed to set up CRS/transforms for 5174->4326->5179", fe);
+        }
 
         List<ApriNode> csvNodes = new ArrayList<>();
         // Adjusted for "busstop_location.csv"
@@ -672,23 +704,26 @@ public class ApriPathFinder {
                 double posY = Double.parseDouble(record[4].trim());
                 Coordinate coord = new Coordinate(posX, posY);
 
-                // Debug line start 
-                testHeadShow++;
-                System.out.println("Adding bus nodes: " + s1);
-                // Debug line end
-                
-
                 try {
-                  CoordinateReferenceSystem srcCRS = CRS.decode("EPSG:5181", true);
-                    CoordinateReferenceSystem destCRS = CRS.decode("EPSG:5179", true);
-                    MathTransform transform = CRS.findMathTransform(srcCRS, destCRS, true);
-                    Coordinate transformedCoord = JTS.transform(coord, null, transform);
-                    coord = transformedCoord;
-                } catch (FactoryException | TransformException e) {
+                    // Apply the precomputed transform (either strict direct, or WGS84 pivot)
+                    coord = JTS.transform(coord, null, tx);
+
+                    if (testHeadShow < 10) {
+                        System.out.println("Adding bus nodes: " + s1 + " coord " + coord);
+                    }
+
+                } catch (TransformException e) {
                     System.err.println("Coordinate transformation failed for bus stop: " + s3);
                     e.printStackTrace();
                     throw new ApriException("Coordinate transformation failed for bus stop: " + s3, e);
                 }
+
+                // Debug line start
+                testHeadShow++;
+                if (testHeadShow < 10) {
+                    System.out.println("Adding bus nodes: " + s1 + " coord " + coord.toString());
+                }
+                // Debug line end
 
                 // "B"+s3,coord, name, "BS",BS_ID,BS_NM
                 ApriNode bsNode = new ApriNode("B" + s3, coord, s1, "BS", s3, s2);
@@ -825,12 +860,12 @@ public class ApriPathFinder {
      * @param filename
      * @throws ResException
      */
-    public SimpleFeatureCollection readSHP(String filename) throws ApriException, ResException {
+    public MyFeatureCollection readSHP(String filename) throws ApriException, ResException {
         File file = new File(filename);
         return readSHP(file);
     }
 
-    public SimpleFeatureCollection readSHP(String filename, String crsName, String charSet)
+    public MyFeatureCollection readSHP(String filename, String crsName, String charSet)
             throws ApriException, ResException {
         File file = new File(filename);
         return readSHP(file, crsName, charSet);
@@ -843,12 +878,13 @@ public class ApriPathFinder {
      * @throws ApriException
      * @throws ResException
      */
-    public SimpleFeatureCollection readSHP(File file) throws ApriException, ResException {
+    public MyFeatureCollection readSHP(File file) throws ApriException, ResException {
         return readSHP(file, "EPSG:5174", "EUC-KR");
     }
 
-    public SimpleFeatureCollection readSHP(File file, String crsName, String charSet)
+    public MyFeatureCollection readSHP(File file, String crsName, String charSet)
             throws ApriException, ResException {
+        // crsName not used...
         Map<String, Object> params = new HashMap<>();
         try {
             params.put("url", file.toURI().toURL());
@@ -885,17 +921,21 @@ public class ApriPathFinder {
             System.out.println("Number of features: " + collection.size());
         } catch (IOException e) {
             e.printStackTrace();
-             throw new ApriException("Unable to open file" + params.get("url"), e);
+            throw new ApriException("Unable to open file" + params.get("url"), e);
         }
-        return collection;
+
+        return MyFeatureCollection.of(collection)
+                .with("crs", crsName)
+                .with("charset", charSet)
+                .with("sourceFile", file.getAbsolutePath());
+        // return collection;
 
     }
-
 
     public void saveAllEdgesToShp(String filename) throws ApriException, IOException {
         File file = new File(filename);
         this.saveAllEdgesToShp(file);
-    }    
+    }
 
     public void saveAllEdgesToShp(File file) throws ApriException, IOException {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
@@ -927,5 +967,4 @@ public class ApriPathFinder {
         writeSFCShapefile(featureCollection, outFile);
     }
 
-    
 }

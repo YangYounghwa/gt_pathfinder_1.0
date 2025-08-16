@@ -26,7 +26,8 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        
+        // TODO  List : Make exceptions for strange cases...  and how to handle those.  
+        // handling should be done on the server side. 
 
 
         ApriPathFinder apf = new ApriPathFinder();

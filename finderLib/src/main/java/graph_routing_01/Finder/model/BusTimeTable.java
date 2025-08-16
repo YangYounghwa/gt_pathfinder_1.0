@@ -181,7 +181,9 @@ public class BusTimeTable {
                 LocalTime satEnd = LocalTime.parse(tokens[4]);
                 LocalTime sunStart = LocalTime.parse(tokens[5]);
                 LocalTime sunEnd = LocalTime.parse(tokens[6]);
-                System.out.println("norStart" + norStart);
+                
+                // Debug line 
+                System.out.println(routeName+"norStart" + norStart);
                 // Assuming the intervals are in minutes
 
                 int norMin, norMax, satMin, satMax, sunMin, sunMax;
