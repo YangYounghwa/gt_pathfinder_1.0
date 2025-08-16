@@ -9,9 +9,29 @@ import org.locationtech.jts.geom.LineString;
 public class ApriPathDTO {
 
     private List<List<List<Double>>> lineSeg; // [[ [x1, y1], [x2, y2], ... ], ...]
+
     private List<String> roadName;
     private List<String> roadType;
     private double totalTime;
+
+
+    public List<List<List<Double>>> getLineSeg() {
+        return lineSeg;
+    }
+
+    public List<String> getRoadName() {
+        return roadName;
+    }
+
+    public List<String> getRoadType() {
+        return roadType;
+    }
+
+    public double getTotalTime() {
+        return totalTime;
+    }
+
+
 
     public ApriPathDTO(ApriPath path) {
         this.totalTime = path.totalTime;

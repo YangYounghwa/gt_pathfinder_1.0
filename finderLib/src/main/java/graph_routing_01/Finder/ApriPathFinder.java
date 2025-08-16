@@ -234,7 +234,7 @@ public class ApriPathFinder {
                 ApriNode targetNode = searchEdge.target;
                 String prevName = currentPathState.getPrevName();
                 String prevType = currentPathState.getPrevType();
-                String currentName = searchEdge.edgeTrackName;
+                String currentName = (searchEdge.edgeTrackName== null) ? "" : searchEdge.edgeTrackName;
                 String currentType = searchEdge.edgeType;
                 // if(prevName.) 
                 // Add penalty Here
@@ -245,7 +245,7 @@ public class ApriPathFinder {
                         penalty = 0.0;                   
                     }
                     else{
-                        penalty = this.busTimeTable.getExpectedIntervalInSeconds("currentName",dayType);
+                        penalty = this.busTimeTable.getExpectedIntervalInSeconds(currentName,dayType);
                     }
                 }
 
@@ -488,8 +488,14 @@ public class ApriPathFinder {
         addBusRouteEdges(file, null, true);
     }
 
+    public void addBusRouteEdges(File file) throws ApriException, ResException, ApriPathExLibError {
+        addBusRouteEdges(file, null, true);
+        }
+
     public void addBusRouteEdges(File file, String charSet, Boolean isHeadered) throws ApriException, ResException, ApriPathExLibError {
         List<ApriEdge> csvEdges = new ArrayList<>();
+
+        // apf.addBusRouteEdges("data_folder\\route_interval_distance.csv");
         // Adjusted for "bus_route.csv"
         if (this.apGraph == null) {
             System.err.println("GraphView must be built in advance.");
@@ -516,13 +522,25 @@ public class ApriPathFinder {
             String bsOrderPrior = null;
             String intervalPrior = null;
 
-            while ((record = csvReader.readNext()) != null) {
 
+            // Debug line
+            int testHeadShow =0;
+
+            while ((record = csvReader.readNext()) != null) {
+                
                 String routeId = record[0].trim(); // routeID
                 String stopId = record[2].trim(); // stopID
                 String direction = record[4].trim(); // direction
                 String bsOrder = record[6].trim(); // BSOrder
                 String interval = record[7].trim(); // interval
+
+                // Debug line start
+                if(testHeadShow < 10) {
+                    System.out.println("routeId: " + routeId + ", stopId: " + stopId + ", direction: " + direction
+                            + ", bsOrder: " + bsOrder + ", interval: " + interval);
+                }
+                testHeadShow++;
+                // Debug line end
 
                 if (routeIdPrior != null) {
                     if (routeId.equals(routeIdPrior) && direction.equals(directionPrior)) {
@@ -540,7 +558,7 @@ public class ApriPathFinder {
                             // new ApriEdge(id,source,target,geometry,edgeType,edgeTrackName,govRoadId);
 
                             // edgeType is "BUS"
-                            // edgeTrackName is name of the routeID
+                            // edgeTrackName is name of the route, e.g. "9201"
                             String edgeTrackName = busTimeTable.getBusName(Long.valueOf(routeId));
 
                             GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
@@ -549,18 +567,18 @@ public class ApriPathFinder {
                                     endNode.coord
                             });
 
-                            Double busTime = busLine.getLength() / 4.7; // 17Km/h = 4.7 m/s
+                            Double busTime = Double.valueOf(interval) / 4.7; // 17Km/h = 4.7 m/s
 
                             ApriEdge edge1 = new ApriEdge("Eb" + routeId + "_" + stopId, startNode, endNode, busLine,
                                     "BUS", edgeTrackName, routeId, busTime);
-                            ApriEdge edge2 = new ApriEdge("Ea" + routeId + "_" + stopId, endNode, startNode,
-                                    busLine.reverse(), "BUS", edgeTrackName, routeId, busTime);
+                            // ApriEdge edge2 = new ApriEdge("Ea" + routeId + "_" + stopId, endNode, startNode,
+                            //         busLine.reverse(), "BUS", edgeTrackName, routeId, busTime);
                             this.apGraph.addEdge(edge1);
-                            this.apGraph.addEdge(edge2);
+                            // this.apGraph.addEdge(edge2);
                             startNode.addStartEdge(edge1);
                             endNode.addEndEdge(edge1);
-                            endNode.addStartEdge(edge2);
-                            startNode.addEndEdge(edge2);
+                            // endNode.addStartEdge(edge2);
+                            // startNode.addEndEdge(edge2);
 
                         }
                     }
@@ -595,6 +613,11 @@ public class ApriPathFinder {
         System.out.println("Bus Routes added.");
     }
 
+    public void addBusstopNodes(File file) throws ApriException, ResException{
+
+        addBusstopNodes(file,null,true);
+    }
+
     public void addBusstopNodes(String filename) throws ApriException, ResException {
         File file = new File(filename);
         addBusstopNodes(file, null, true);
@@ -616,6 +639,12 @@ public class ApriPathFinder {
      * @throws ResException  if there is an error in reading the resource
      */
     public void addBusstopNodes(File file, String charSet, Boolean isHeadered) throws ApriException, ResException {
+
+
+        // Debug line start
+        System.out.println("Adding bus stop nodes from file: " + file.getName());
+        int testHeadShow = 0;
+        // Debug line end
 
         List<ApriNode> csvNodes = new ArrayList<>();
         // Adjusted for "busstop_location.csv"
@@ -642,8 +671,15 @@ public class ApriPathFinder {
                 double posX = Double.parseDouble(record[3].trim());
                 double posY = Double.parseDouble(record[4].trim());
                 Coordinate coord = new Coordinate(posX, posY);
+
+                // Debug line start 
+                testHeadShow++;
+                System.out.println("Adding bus nodes: " + s1);
+                // Debug line end
+                
+
                 try {
-                    CoordinateReferenceSystem srcCRS = CRS.decode("EPSG:5181", true);
+                  CoordinateReferenceSystem srcCRS = CRS.decode("EPSG:5181", true);
                     CoordinateReferenceSystem destCRS = CRS.decode("EPSG:5179", true);
                     MathTransform transform = CRS.findMathTransform(srcCRS, destCRS, true);
                     Coordinate transformedCoord = JTS.transform(coord, null, transform);
@@ -856,8 +892,12 @@ public class ApriPathFinder {
     }
 
 
-
     public void saveAllEdgesToShp(String filename) throws ApriException, IOException {
+        File file = new File(filename);
+        this.saveAllEdgesToShp(file);
+    }    
+
+    public void saveAllEdgesToShp(File file) throws ApriException, IOException {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
         typeBuilder.setName("EdgeFeature");
         try {
@@ -883,7 +923,7 @@ public class ApriPathFinder {
             featureCollection.add(feature);
         }
 
-        File outFile = new File(filename);
+        File outFile = file;
         writeSFCShapefile(featureCollection, outFile);
     }
 
