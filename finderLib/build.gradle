@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'apri'         // ← your groupId
-version = '1.0.1'      // ← bump when you change the lib
+version = '1.0.2'      // ← bump when you change the lib
 
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
