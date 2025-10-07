@@ -20,13 +20,16 @@ import org.locationtech.jts.geom.LineString;
 
 import graph_routing_01.Finder.ApriPathFinder;
 import graph_routing_01.Finder.model.ApriPath;
+import graph_routing_01.Finder.model.ApriPathDTO;
+import graph_routing_01.Finder.util.ApriPathMapper;
 
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        
+        // TODO  List : Make exceptions for strange cases...  and how to handle those.  
+        // handling should be done on the server side. 
 
 
         ApriPathFinder apf = new ApriPathFinder();
@@ -53,6 +56,7 @@ public class Main {
         // 이게 꽤나 오래 걸리는 구간.
         apf.saveAllEdgesToShp("result\\all_edges.shp");
 
+
         // 버스 구간 추가 구현이 미완성입니다. 
         // 현재 인천시에 버스 구간 노드 정보 요청했고 업데이트 및 검토 후 업로드 된다고 답변 받았습니다.
         // 음... 신규 버스 데이터를 받긴 했는데..  버스 경로 node는 없습니다. 따라서 결과도 버스 구간은 직선으로만 나올 예정입니다.
@@ -71,6 +75,10 @@ public class Main {
         // gis 시스템들의 custom인 듯 합니다.
         System.out.println("Finding Path");
         ApriPath path = apf.findPath(stLon,stLat,endLon,endLat);
+
+        // Path to DTO using ApriPathMapper.
+        ApriPathDTO pathDTO = ApriPathMapper.toDTO(path);
+
         System.out.println("Path Found");
         if (path == null) 
             System.err.println("경로를 탐색 실패");
@@ -78,6 +86,8 @@ public class Main {
         // 카카오 맵과 연동을 위해서 위도 및 경도를 바꾸어줍니다.
         // 반환 path2는 coordinate가 X가 latitude, Y가 longitude 입니다.
         ApriPath path2 = apf.pathToWGS84(path);
+
+        
 
         // shp파일로 저장하여 qgis를 통해서 열어볼 수 있습니다.
         apf.pathToShp(path, "result\\path.shp");

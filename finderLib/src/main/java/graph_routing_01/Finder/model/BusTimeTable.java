@@ -123,8 +123,16 @@ public class BusTimeTable {
      */
     public double getExpectedIntervalInSeconds(String routeName, int dayType) throws ApriPathExLibError {
 
-        double minIntervalMinute = this.busTimes.get(getBusId(routeName)).getMinInterval(dayType);
-        double maxIntervalMinute = this.busTimes.get(getBusId(routeName)).getMaxInterval(dayType);
+        Long busId = this.getBusId(routeName);
+        // System.out.println("busId " + busId); 
+        // busId is null..
+        busTime bt = this.busTimes.get(getBusId(routeName));
+        // System.out.println(bt);
+        double minIntervalMinute = Double.POSITIVE_INFINITY;
+        double maxIntervalMinute = Double.POSITIVE_INFINITY;
+        if(bt!= null) minIntervalMinute = bt.getMinInterval(dayType);
+        if(bt!=null) maxIntervalMinute = bt.getMaxInterval(dayType);
+        
 
         double expected = 60.0 * (minIntervalMinute / 3
                 + 2.0 * maxIntervalMinute / 3);
@@ -143,6 +151,7 @@ public class BusTimeTable {
                 boolean onNor = true;
                 boolean onSat = true;
                 boolean onSun = true;
+                // System.out.println("Route "+ routeId + " " + routeName);
                 for (int i = 1; i <= 6; i++) {
                     if (tokens[i] != null && tokens[i].startsWith("0:")) {
                         tokens[i] = "00:00";
@@ -172,7 +181,9 @@ public class BusTimeTable {
                 LocalTime satEnd = LocalTime.parse(tokens[4]);
                 LocalTime sunStart = LocalTime.parse(tokens[5]);
                 LocalTime sunEnd = LocalTime.parse(tokens[6]);
-
+                
+                // Debug line 
+                System.out.println(routeName+"norStart" + norStart);
                 // Assuming the intervals are in minutes
 
                 int norMin, norMax, satMin, satMax, sunMin, sunMax;
@@ -246,6 +257,12 @@ public class BusTimeTable {
             }
             isLoaded = true;
             System.out.println("Bus time table loaded successfully.");
+            // Example: print all bus names after loading
+            for (Long routeId : busNames.keySet()) {
+                System.out.println("Loaded bus: "+routeId+" - "  + busNames.get(routeId));
+                
+            }
+
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
         }
